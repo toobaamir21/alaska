@@ -1,0 +1,298 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  createdAt       DateTime          @default(now())
+  userOne         chat[]            @relation("userOne")
+  userTwo         chat[]            @relation("userTwo")
+  message         message[]
+  secret          secret?
+  session         session[]
+  profile         profile?
+  helpAndFeedback helpAndFeedback[]
+  paymentDetails  paymentDetails[]
+}
+
+model secret {
+  id         String   @id @default(uuid())
+  password   String
+  otp        String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  userSecret user     @relation(fields: [userId], references: [id])
+  userId     String   @unique
+  updatedAt  DateTime
+}
+
+model session {
+  id           String   @id @default(uuid())
+  refreshToken String
+  userSession  user     @relation(fields: [userId], references: [id])
+  userId       String
+  createdAt    DateTime @default(now())
+}
+
+model profile {
+  id                       String              @id @default(uuid())
+  firstName                String
+  lastName                 String
+  dateOfBirth              DateTime
+  address                  String
+  longitude                Float
+  latitude                 Float
+  about                    String
+  gender                   String?
+  workerType               workerType?
+  isFaceVerified           Boolean?
+  profession               String?
+  companyName              String?
+  liscenceNumber           String?
+  serviceProviderDocuments documents[]
+  role                     role
+  settings                 userSettings?
+  reason                   reason[]
+  userProfile              user                @relation(fields: [userId], references: [id])
+  userId                   String              @unique
+  invitedUsersByMember     invitedUsers[]      @relation("member")
+  invitedUsers             invitedUsers[]      @relation("serviceProvider")
+  jobByMember              job[]               @relation("member")
+  serviceProviderJob       job[]               @relation("serviceProvider")
+  reviewByMember           review[]            @relation("member")
+  serviceProviderReview    review[]            @relation("serviceProvider")
+  // disputeByMember          dispute[]           @relation("member")
+  // serviceProviderDispute   dispute[]           @relation("serviceProvider")
+  bookMarkByMember         bookMarkEmployees[] @relation("member")
+  bookMarkEmployees        bookMarkEmployees[] @relation("serviceProvider")
+  bookMarkJobs             bookMarkJobs[]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime
+  refer                    refer[]
+}
+
+model documents {
+  id                String   @id @default(uuid())
+  documents         String
+  serviceProvider   profile  @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+  updatedAt         DateTime
+}
+
+model refer {
+  id           String   @id @default(uuid())
+  user         profile  @relation(fields: [userId], references: [id])
+  userId       String
+  referralCode String
+  // referralLink String 
+  createdAt    DateTime @default(now())
+}
+
+model invitedUsers {
+  id                   String   @id @default(uuid())
+  invitedUsersByMember profile  @relation(fields: [memberId], references: [id], name: "member")
+  memberId             String
+  serviceProviders     profile  @relation(fields: [serviceProviderId], references: [id], name: "serviceProvider")
+  serviceProviderId    String
+  createdAt            DateTime @default(now())
+}
+
+model job {
+  id                String         @id @default(uuid())
+  workerType        workerType
+  title             String
+  date              DateTime
+  time              String
+  description       String
+  longitude         Float
+  latitude          Float
+  from              Float
+  to                Float
+  decidedCost       Float
+  type              jobType
+  pay               pay
+  isDeleted         Boolean        @default(false)
+  category          category?
+  reason            reason?
+  member            profile        @relation(fields: [memberId], references: [id], name: "member")
+  memberId          String
+  serviceProvider   profile?        @relation(fields: [serviceProviderId], references: [id], name: "serviceProvider")
+  serviceProviderId String?
+  bookMarkJobs      bookMarkJobs[]
+  dispute           dispute?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime
+}
+
+model bookMarkEmployees {
+  id                String   @id @default(uuid())
+  member            profile  @relation(fields: [memberId], references: [id], name: "member")
+  memberId          String
+  serviceProvider   profile  @relation(fields: [serviceProviderId], references: [id], name: "serviceProvider")
+  serviceProviderId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+}
+
+model bookMarkJobs {
+  id                String   @id @default(uuid())
+  job               job      @relation(fields: [jobId], references: [id])
+  jobId             String
+  serviceProvider   profile  @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+}
+
+model category {
+  id        String   @id @default(uuid())
+  category  String
+  job       job      @relation(fields: [jobId], references: [id])
+  jobId     String   @unique
+  updatedAt DateTime
+}
+
+model reason {
+  id          String   @id @default(uuid())
+  reason      String
+  description String?
+  user        profile  @relation(fields: [userId], references: [id])
+  userId      String
+  job         job      @relation(fields: [jobId], references: [id])
+  jobId       String   @unique
+  createdAt   DateTime @default(now())
+}
+
+model dispute {
+  id                String   @id @default(uuid())
+  // member            profile  @relation(fields: [memberId], references: [id], name: "member")
+  // memberId          String
+  // serviceProvider   profile  @relation(fields: [serviceProviderId], references: [id], name: "serviceProvider")
+  // serviceProviderId String
+  job               job      @relation(fields: [jobId], references: [id])
+  jobId             String   @unique
+  createdAt         DateTime
+}
+
+model review {
+  id                String   @id @default(uuid())
+  rating            Int
+  review            String
+  member            profile  @relation(fields: [memberId], references: [id], name: "member")
+  memberId          String
+  serviceProvider   profile  @relation(fields: [serviceProviderId], references: [id], name: "serviceProvider")
+  serviceProviderId String
+  createdAt         DateTime @default(now())
+}
+
+model paymentDetails {
+  id            String   @id @default(uuid())
+  jobTitle      String
+  name          String
+  time          String
+  date          DateTime
+  paymentMethod String
+  payAmount     String
+  user          user     @relation(fields: [userId], references: [id])
+  userId        String   @unique
+  createdAt     DateTime @default(now())
+}
+
+model chat {
+  id        String    @id @default(uuid())
+  userOneId String
+  userTwoId String
+  userOne   user      @relation(fields: [userOneId], references: [id], name: "userOne")
+  userTwo   user      @relation(fields: [userTwoId], references: [id], name: "userTwo")
+  messages  message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+}
+
+model message {
+  id        String    @id @default(uuid())
+  message   String
+  chatMsgs  chat      @relation(fields: [chatId], references: [id])
+  chatId    String
+  sender    user      @relation(fields: [senderId], references: [id])
+  senderId  String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model settings {
+  id              String   @id @default(uuid())
+  termsConditions String
+  privacyPolicy   String
+  aboutApp        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+}
+
+model userSettings {
+  id        String   @id @default(uuid())
+  isPush    Boolean  @default(true)
+  user      profile  @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model helpAndFeedback {
+  id        String   @id @default(uuid())
+  subject   String
+  message   String
+  user      user     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model images {
+  id        String   @id @default(uuid())
+  url       String
+  relatedTo String
+  relatedId String
+  updatedAt DateTime
+}
+
+// model images {
+//   id         String           @id @default(uuid())
+//   url        String
+//   job        job?             @relation(fields: [jobId], references: [id])
+//   jobId      String?
+//   feedback   helpAndFeedback? @relation(fields: [feedbackId], references: [id])
+//   feedbackId String?
+//   updatedAt  DateTime         @default(now())
+// }
+
+enum role {
+  SERVICEPROVIDER
+  MEMBER
+}
+
+enum workerType {
+  SERVICEPROVIDER
+  GIGWORKER
+}
+
+enum jobType {
+  WORKINGHOUR
+  AFTERHOUR
+}
+
+enum pay {
+  FIXEDAMOUNT
+  PAYHOURLY
+}
